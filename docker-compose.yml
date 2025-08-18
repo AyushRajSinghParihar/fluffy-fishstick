@@ -43,6 +43,15 @@ services:
       retries: 3
       start_period: 60s
 
+  training:
+    build: ./training
+    container_name: training_service
+    env_file:
+      - .env
+    depends_on:
+      mlflow:
+        condition: service_healthy
+
   forecasting-api:
     build: ./forecasting_service
     container_name: forecasting_api
