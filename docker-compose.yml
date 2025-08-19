@@ -25,6 +25,15 @@ services:
     ports:
       - "8001:8000"
 
+  frontend:
+    build: ./frontend
+    container_name: frontend_app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - forecasting-api
+      - simulation-api
+
 volumes:
   # Define the shared volume
   model_artifacts:

@@ -2,7 +2,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from typing import List
 import joblib
-import numpy as np # Import numpy
+import numpy as np
 
 model = None
 MODEL_PATH = "/artifacts/demand_forecaster.pkl"
@@ -18,7 +18,7 @@ HOURLY_PROFILE = HOURLY_PROFILE_PERCENT / HOURLY_PROFILE_PERCENT.sum()
 
 
 app = FastAPI(
-    title="Pravāh Forecasting Service",
+    title="Pravah Forecasting Service",
     on_startup=[lambda: load_model()]
 )
 

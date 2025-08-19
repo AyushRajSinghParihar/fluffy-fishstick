@@ -7,7 +7,7 @@ import pandapower.networks as nw
 # Initialize the FastAPI app
 app = FastAPI(title="Pravah Simulation Service")
 
-#  Pydantic Model for Input Validation 
+# Pydantic Model for Input Validation 
 class SimulationRequest(BaseModel):
     hourly_load_mw: List[float] = Field(
         ..., 
@@ -16,7 +16,7 @@ class SimulationRequest(BaseModel):
         description="A list of 24 hourly load forecasts in MW."
     )
 
-#  API Endpoints 
+# API Endpoints 
 @app.get("/health", status_code=200)
 def health_check():
     """Simple health check endpoint."""
@@ -42,12 +42,12 @@ def run_simulation(request: SimulationRequest):
     net.ext_grid['min_p_mw'] = 0
     net.ext_grid['max_p_mw'] = 250
 
-    # Now, safely create our own costs
+    # Safely create our own costs
     pp.create_poly_cost(net, 0, 'ext_grid', cp1_eur_per_mw=10)
     pp.create_poly_cost(net, 0, 'gen', cp1_eur_per_mw=20)
     pp.create_poly_cost(net, 1, 'gen', cp1_eur_per_mw=30)
 
-    #  Run the Simulation Loop 
+    # Run the Simulation Loop
     base_loads = net.load.p_mw.copy()
 
     for hour, total_load_mw in enumerate(request.hourly_load_mw):
