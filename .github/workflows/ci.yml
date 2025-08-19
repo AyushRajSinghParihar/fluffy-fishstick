@@ -3,9 +3,9 @@ name: CI Pipeline
 # Trigger the workflow on push to the main branch or on pull requests
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build-and-test:
