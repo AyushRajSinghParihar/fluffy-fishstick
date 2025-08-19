@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -23,33 +23,48 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r tests/requirements.txt
-          pip install ruff # Also install linter
+          pip install ruff
 
       - name: Lint with ruff
         run: |
           ruff check .
 
-      # Testing sequence
+      # Testing sequence with retry logic
       - name: Build and Run Services in Background
         run: |
-          # We run 'docker compose up' in detached mode (-d)
-          # This will build the images and start all containers
-          docker compose up --build -d
+          # Retry docker compose up with exponential backoff
+          for i in {1..3}; do
+            echo "Attempt $i: Building and starting services..."
+            if docker compose up --build -d; then
+              echo "Services started successfully!"
+              break
+            else
+              echo "Attempt $i failed. Waiting before retry..."
+              if [ $i -lt 3 ]; then
+                sleep $((i * 10))  # Wait 10s, then 20s
+                docker compose down --volumes || true  # Clean up any partial state
+              else
+                echo "All attempts failed"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Wait for Services to be Healthy
         run: |
-          # This is a simple but effective health check loop.
-          # It waits for up to 2 minutes for the forecasting API to respond.
           echo "Waiting for services to start..."
           timeout 120s bash -c 'until curl -s -f http://localhost:8000/health; do echo "Waiting for forecasting API..."; sleep 5; done'
           echo "Forecasting API is up!"
-          timeout 120s bash - 'until curl -s -f http://localhost:8001/health; do echo "Waiting for simulation API..."; sleep 5; done'
+          timeout 120s bash -c 'until curl -s -f http://localhost:8001/health; do echo "Waiting for simulation API..."; sleep 5; done'
           echo "Simulation API is up!"
           echo "All services are healthy."
 
       - name: Run Pytest against running services
         run: |
           pytest tests/
+        env:
+          FORECASTING_API_URL: http://localhost:8000
+          SIMULATION_API_URL: http://localhost:8001
 
       # Cleanup
       - name: Stop Services
