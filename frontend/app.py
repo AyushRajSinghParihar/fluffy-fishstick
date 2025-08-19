@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-import numpy as np
 
 # Configuration
 st.set_page_config(page_title="Pravah Grid Simulation", layout="wide")
