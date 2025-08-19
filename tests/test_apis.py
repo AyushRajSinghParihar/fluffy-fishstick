@@ -1,6 +1,5 @@
 import httpx
 
-# Define the base URLs for the services
 FORECASTING_API_URL = "http://localhost:8000"
 SIMULATION_API_URL = "http://localhost:8001"
 
@@ -27,7 +26,6 @@ def test_get_prediction():
 
 def test_run_simulation_success():
     """Tests the simulation API with a valid payload."""
-    # A simple, valid payload for testing
     payload = {"hourly_load_mw": [50.0] * 24}
     
     response = httpx.post(f"{SIMULATION_API_URL}/run_simulation", json=payload, timeout=30.0)
@@ -39,10 +37,8 @@ def test_run_simulation_success():
 
 def test_run_simulation_validation_error():
     """Tests that the simulation API fails correctly with an invalid payload."""
-    # An invalid payload with only 23 hours of data
     payload = {"hourly_load_mw": [50.0] * 23}
     
     response = httpx.post(f"{SIMULATION_API_URL}/run_simulation", json=payload)
     
-    # Pydantic validation error should return a 422 status code
     assert response.status_code == 422

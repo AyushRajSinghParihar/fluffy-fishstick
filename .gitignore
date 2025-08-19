@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -8,8 +7,6 @@ env/
 venv/
 *.egg-info/
 
-# Environment
 .env
 
-# Docker
 docker-data/

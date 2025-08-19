@@ -5,7 +5,6 @@ import joblib
 def train_model():
     print("Starting model training...")
     
-    # Data Loading and Feature Engineering 
     data_url = "https://raw.githubusercontent.com/jenfly/opsd/master/opsd_germany_daily.csv"
     df = pd.read_csv(data_url)
     df['Date'] = pd.to_datetime(df['Date'])
@@ -26,7 +25,6 @@ def train_model():
     model = lgb.LGBMRegressor(**params)
     model.fit(X_train, y_train)
 
-    # Save the Model to the Shared Volume 
     model_path = "/artifacts/demand_forecaster.pkl"
     joblib.dump(model, model_path)
     

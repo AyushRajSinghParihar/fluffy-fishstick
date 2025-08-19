@@ -3,7 +3,6 @@ services:
     build: ./training
     container_name: training_service
     volumes:
-      # Mount the shared volume to a path inside the container
       - model_artifacts:/artifacts
 
   forecasting-api:
@@ -12,10 +11,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Mount the same shared volume
       - model_artifacts:/artifacts
     depends_on:
-      # Make it wait for the training to complete
       training:
         condition: service_completed_successfully
 
@@ -35,5 +32,4 @@ services:
       - simulation-api
 
 volumes:
-  # Define the shared volume
   model_artifacts:
