@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from typing import List

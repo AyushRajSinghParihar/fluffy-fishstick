@@ -1,6 +1,6 @@
 import pandas as pd
 import lightgbm as lgb
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection
 import joblib
 
 def train_model():

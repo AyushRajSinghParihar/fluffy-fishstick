@@ -1,5 +1,4 @@
 import httpx
-import pytest
 
 # Define the base URLs for the services
 FORECASTING_API_URL = "http://localhost:8000"
