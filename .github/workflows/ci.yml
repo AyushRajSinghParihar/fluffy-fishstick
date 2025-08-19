@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+# Trigger the workflow on push to the main branch or on pull requests
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository's code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # Step 3: Install dependencies for testing
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      # Step 4: Linting Check (Optional but highly recommended)
+      # This step checks for code formatting and style issues.
+      # We will add ruff to our test requirements.
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check .
+
+      # Step 5: Run the automated tests
+      - name: Run Pytest
+        run: |
+          # Note: This step in CI only checks if the tests *can* run.
+          # It will fail if there are syntax errors in the tests.
+          # The primary way to run these integration tests is locally
+          # against the running Docker containers.
+          pytest tests/
