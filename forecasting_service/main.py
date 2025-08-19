@@ -2,72 +2,61 @@ import os
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from typing import List
-import mlflow
+import joblib
+import numpy as np # Import numpy
 
-# --- Global variable to hold the model ---
 model = None
+MODEL_PATH = "/artifacts/demand_forecaster.pkl"
 
-# --- FastAPI App Initialization ---
+# A standard residential/commercial electricity usage profile for a 24-hour period.
+# These are percentages that represent the "shape" of a day. They sum to 100.
+HOURLY_PROFILE_PERCENT = np.array([
+    2.8, 2.5, 2.3, 2.2, 2.3, 2.7, 3.5, 4.5, 5.5, 6.0, 6.2, 6.3, 
+    6.2, 6.0, 5.8, 5.9, 6.5, 7.5, 8.0, 7.5, 6.5, 5.5, 4.5, 3.6
+])
+# Normalize to ensure it sums to 1
+HOURLY_PROFILE = HOURLY_PROFILE_PERCENT / HOURLY_PROFILE_PERCENT.sum()
+
+
 app = FastAPI(
     title="Pravāh Forecasting Service",
-    on_startup=[lambda: load_model()] # Load model on startup
+    on_startup=[lambda: load_model()]
 )
 
 def load_model():
-    """
-    Loads the latest 'Production' stage model from the MLflow Model Registry.
-    """
     global model
-    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-    model_name = "demand-forecaster"
-    stage = "Production"
-    
-    print(f"Loading model '{model_name}' in stage '{stage}' from {mlflow_tracking_uri}...")
-    
     try:
-        # Load the model from the registry
-        model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{stage}")
-        print("Model loaded successfully.")
+        model = joblib.load(MODEL_PATH)
+        print("Model loaded successfully from /artifacts/demand_forecaster.pkl")
     except Exception as e:
-        print(f"Error loading model: {e}. The service will not be able to make predictions.")
-        # In a real app, you might have a fallback model or a more robust error handling
+        print(f"Error loading model: {e}")
         model = None
 
-# --- API Endpoints ---
 @app.get("/health", status_code=200)
 def health_check():
-    """Simple health check endpoint."""
     return {"status": "ok"}
 
 @app.get("/predict", response_model=List[float])
 def get_prediction():
-    """
-    Returns a 24-hour load forecast using the loaded ML model.
-    """
     if model is None:
-        raise HTTPException(
-            status_code=503, 
-            detail="Model is not available. Please ensure a model is trained and promoted to 'Production' stage."
-        )
+        raise HTTPException(status_code=503, detail="Model is not available.")
 
-    print("Generating prediction for the next 24 hours...")
+    # 1. Create features for a single point in time (tomorrow)
+    tomorrow = pd.Timestamp.now() + pd.Timedelta(days=1)
+    future_df = pd.DataFrame(index=[tomorrow])
     
-    # 1. Create a DataFrame for the next 24 hours
-    now = pd.Timestamp.now()
-    future_dates = pd.to_datetime([now + pd.Timedelta(hours=i) for i in range(24)])
-    future_df = pd.DataFrame(index=future_dates)
-    
-    # 2. Engineer the same features the model was trained on
-    future_df['hour'] = future_df.index.hour
+    future_df['hour'] = future_df.index.hour # Will be 0
     future_df['dayofweek'] = future_df.index.dayofweek
     future_df['month'] = future_df.index.month
     future_df['year'] = future_df.index.year
-    # For Solar and Wind, we'll use a simple placeholder (e.g., median) since we don't have future data
-    # In a real system, these would come from a weather forecast
-    future_df['Solar'] = 15.0 # Placeholder
-    future_df['Wind'] = 20.0  # Placeholder
+    # Use placeholder values for Solar and Wind
+    future_df['Solar'] = 15.0 
+    future_df['Wind'] = 20.0
     
-    # 3. Make predictions
-    predictions = model.predict(future_df)
+    # 2. Predict the TOTAL consumption for the entire day
+    daily_prediction = model.predict(future_df)[0]
     
-    return predictions.tolist()
+    # 3. Distribute this total across 24 hours using the profile
+    hourly_predictions = daily_prediction * HOURLY_PROFILE
+    
+    return hourly_predictions.tolist()
