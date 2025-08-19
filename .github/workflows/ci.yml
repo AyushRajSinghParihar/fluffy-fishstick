@@ -1,6 +1,5 @@
 name: CI Pipeline
 
-# Trigger the workflow on push to the main branch or on pull requests
 on:
   push:
     branches: [ main ]
@@ -12,35 +11,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the repository's code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
-      # Step 3: Install dependencies for testing
-      - name: Install dependencies
+      - name: Install Python dependencies for testing
         run: |
           python -m pip install --upgrade pip
           pip install -r tests/requirements.txt
+          pip install ruff # Also install linter
 
-      # Step 4: Linting Check (Optional but highly recommended)
-      # This step checks for code formatting and style issues.
-      # We will add ruff to our test requirements.
       - name: Lint with ruff
         run: |
-          pip install ruff
           ruff check .
 
-      # Step 5: Run the automated tests
-      - name: Run Pytest
+      # Testing sequence
+      - name: Build and Run Services in Background
         run: |
-          # Note: This step in CI only checks if the tests *can* run.
-          # It will fail if there are syntax errors in the tests.
-          # The primary way to run these integration tests is locally
-          # against the running Docker containers.
+          # We run 'docker compose up' in detached mode (-d)
+          # This will build the images and start all containers
+          docker compose up --build -d
+
+      - name: Wait for Services to be Healthy
+        run: |
+          # This is a simple but effective health check loop.
+          # It waits for up to 2 minutes for the forecasting API to respond.
+          echo "Waiting for services to start..."
+          timeout 120s bash -c 'until curl -s -f http://localhost:8000/health; do echo "Waiting for forecasting API..."; sleep 5; done'
+          echo "Forecasting API is up!"
+          timeout 120s bash - 'until curl -s -f http://localhost:8001/health; do echo "Waiting for simulation API..."; sleep 5; done'
+          echo "Simulation API is up!"
+          echo "All services are healthy."
+
+      - name: Run Pytest against running services
+        run: |
           pytest tests/
+
+      # Cleanup
+      - name: Stop Services
+        if: always()
+        run: |
+          docker compose down --volumes
