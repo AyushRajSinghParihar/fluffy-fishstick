@@ -97,4 +97,6 @@ This is definitely a foundation I could build on. Couldn't do all of this becaus
 
 ## Why I Built This
 
-To get hired. Thank you for reading till here!
+To get hired. 
+
+Thank you for reading till here. Let's talk.
