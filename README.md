@@ -47,7 +47,7 @@ I made this as simple as possible to run locally
 1. **Get the code:**
    ```bash
    git clone https://github.com/AyushRajSinghParihar/fluffy-fishstick.git
-   cd YOUR_REPOSITORY
+   cd fluffy-fishstick
    ```
 
 2. **Start everything:**
